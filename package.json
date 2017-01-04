@@ -1,0 +1,22 @@
+{
+  "name": "btp-funds",
+  "version": "1.0.0",
+  "description": "a bitproperty funding tips",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://poterjohnson@github.com/poterjohnson/btp-funds.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/poterjohnson/btp-funds/issues"
+  },
+  "homepage": "https://github.com/poterjohnson/btp-funds#readme"
+}
