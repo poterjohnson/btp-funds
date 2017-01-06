@@ -7,7 +7,7 @@ function setStatus(message) {
 };
 
 function refreshBalance() {
-  var meta = MetaCoin.deployed();
+  meta = BtpCrowdFundingProject.deployed();
 
   meta.getBalance.call(account, {from: account}).then(function(value) {
     var balance_element = document.getElementById("balance");
@@ -19,14 +19,13 @@ function refreshBalance() {
 };
 
 function sendCoin() {
-  var meta = MetaCoin.deployed();
 
   var amount = parseInt(document.getElementById("amount").value);
   var receiver = document.getElementById("receiver").value;
 
   setStatus("Initiating transaction... (please wait)");
 
-  meta.sendCoin(receiver, amount, {from: account}).then(function() {
+  meta.addBtpCrowdFundingProject(44444, amount, account,account ,{from: account}).then(function() {
     setStatus("Transaction complete!");
     refreshBalance();
   }).catch(function(e) {

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.2;
 
 
-contract BtpCrowdfunding {
+contract EthCrowdfunding {
 
     /*
     statement configration
@@ -34,7 +34,9 @@ contract BtpCrowdfunding {
     }
 
 
-    function BtpCrowdfunding(uint funding_period, uint funding_goal_usd, address fund_owner, address usd_eth_rate_pusher) {
+    function EthCrowdfunding(uint funding_period, uint funding_goal_usd, address fund_owner, address usd_eth_rate_pusher) 
+        noEther 
+    {
         CROWDFUNDING_PERIOD = funding_period;
         FUNDING_GOAL_USD = funding_goal_usd;
         OWNER = fund_owner;
@@ -45,9 +47,10 @@ contract BtpCrowdfunding {
     function fund(bytes32 name)
         external
         timedTransitions
+        payable
         atStageOR(Stages.CrowdfundingGoingAndGoalNotReached, Stages.CrowdfundingGoingAndGoalReached)
         minInvestment
-        returns (uint)
+        returns (bool)
     {
 
         // Update fund's and user's balance and total supply of tokens.
@@ -61,20 +64,93 @@ contract BtpCrowdfunding {
                 stage = Stages.CrowdfundingGoingAndGoalReached;
             }
         }
-
-       
-        // not an else clause for the edge case that the CAP and TOKEN_TARGET are reached in one call
-        }
-      
-        return stage;
+        return true;
     }
 
     /// @dev Allows user to withdraw ETH if token creation period ended and target was not reached. Returns success.
- 
+    function withdrawFunding()
+        external
+        noEther
+        timedTransitions
+        atStage(Stages.CrowdfundingEndedAndGoalNotReached)
+        returns (bool)
+    {
+        // Update fund's and user's balance and total supply of tokens.
+        uint value = investers[msg.sender].eth_balance;
+        // Send ETH back to user.
+        if (value > 0  && !msg.sender.send(value)) {
+            throw;
+        }
+        investers[msg.sender].eth_balance = 0;
+        fundBalance -= value;
+        return true;
+    }
+
+    ///  Withdraws ETH to owner address. Returns success.
+    function withdrawForOwner()
+        external
+        noEther
+        timedTransitions
+        onlyOwner
+        atStage(Stages.CrowdfundingEndedAndGoalReached)
+        returns (bool)
+    {
+        uint value = fundBalance;
+        fundBalance = 0;
+        if (value > 0  && !msg.sender.send(value)) {
+            throw;
+        }
+        return true;
+    }
+
+    function changeEthUSDRate(uint rate)
+        external
+        noEther
+        onlyUsdEthRatePusher
+        returns (bool)
+    {
+        USD_ETH_RATE = rate;
+        return true;
+    }
+
+
+    /// @dev Returns if token creation ended successfully.
+    function campaignEndedSuccessfully()
+        constant
+        external
+        noEther
+        returns (bool)
+    {
+        if (stage == Stages.CrowdfundingEndedAndGoalReached) {
+            return true;
+        }
+        return false;
+    }
+
+    // updateStage allows calls to receive correct stage. It can be used for transactions but is not part of the regular token creation routine.
+    // It is not marked as constant because timedTransitions modifier is altering state and constant is not yet enforced by solc.
+    /// @dev returns correct stage, even if a function with timedTransitions modifier has not yet been called successfully.
+    function updateStage()
+        external
+        timedTransitions
+        noEther
+        returns (Stages)
+    {
+        return stage;
+    }
+    /*
+     *  Modifiers
+     */
+    modifier noEther() {
+        if (msg.value > 0) {
+            throw;
+        }
+        _;
+    }
 
     modifier onlyOwner() {
         // Only owner is allowed to do this action.
-        if (msg.sender != owner) {
+        if (msg.sender != OWNER) {
             throw;
         }
         _;
